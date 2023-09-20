@@ -1,0 +1,27 @@
+#!/bin/sh
+export camdev=$1
+if [ -z $camdev ];then
+echo enter camera/v4l device path
+read camdev
+fi
+echo > /tmp/oldtxt.txt
+while true;do
+ffmpeg -f v4l2 -i $camdev -frames 1 -f mjpeg pipe:1 2>/dev/null|tesseract stdin /tmp/txt 2>/dev/null
+export len=`cat /tmp/txt.txt|tr -d \\n|wc -l`
+if [ $len -gt 0 ];then
+if diff /tmp/txt.txt /tmp/oldtxt.txt > /dev/null 2>/dev/null;then
+sleep .01
+else
+play -n -q synth square 900 trim 00:00:00 00:00:00.025
+clear
+export IFS=$(echo -en \\n\\b)
+for f in `cat /tmp/txt.txt`;do
+echo $f
+done
+
+cp /tmp/txt.txt /tmp/oldtxt.txt
+fi
+else
+play -n -q synth square 200 trim 00:00:00 00:00:00.005
+fi
+done
